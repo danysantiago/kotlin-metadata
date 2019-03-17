@@ -2,7 +2,9 @@ package me.eugeniomarletti.kotlin.metadata.jvm
 
 import me.eugeniomarletti.kotlin.processing.KotlinProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.NestingKind
 import javax.lang.model.element.QualifiedNameable
+import javax.lang.model.element.TypeElement
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.ErrorType
@@ -68,6 +70,17 @@ interface JvmDescriptorUtils : KotlinProcessingEnvironment {
  */
 val Element.internalName: String
     get() = when (this) {
+        is TypeElement ->
+            when (nestingKind) {
+                NestingKind.TOP_LEVEL ->
+                    qualifiedName.toString().replace('.', '/')
+                NestingKind.MEMBER ->
+                    enclosingElement.internalName + "$" + simpleName
+                NestingKind.LOCAL, NestingKind.ANONYMOUS ->
+                    error("Unsupported nesting $nestingKind")
+                else ->
+                    error("Unsupported, nestingKind == null")
+            }
         is QualifiedNameable -> qualifiedName.toString().replace('.', '/')
         else -> simpleName.toString()
     }
